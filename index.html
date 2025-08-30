@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRAYUSH MUN – IPL Mega Auction</title>
+  <style>
+    :root{
+      --bg:#0b0b1d; --panel:#151533; --accent:#ffd34e; --accent2:#7b61ff; --text:#f6f6ff; --muted:#b9b9d6;
+      --danger:#ff4d4f; --success:#2ecc71;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(1200px 800px at 80% -20%, #1f1f5e 0%, #0b0b1d 60%), var(--bg);color:var(--text)}
+    header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #23234a;background:linear-gradient(180deg, rgba(255,211,78,0.08), transparent)}
+    header h1{font-size:20px;margin:0;letter-spacing:0.5px}
+    header .badge{background:var(--accent2);padding:6px 10px;border-radius:999px;font-size:12px}
+
+    .wrap{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));border:1px solid #24244a;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+    .card h2{margin:0 0 12px;font-size:18px}
+
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width: 640px){.grid{grid-template-columns:1fr}}
+
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input, select, textarea{width:100%;background:#0e0e26;border:1px solid #2a2a58;color:var(--text);padding:10px 12px;border-radius:10px;font-size:14px}
+    textarea{min-height:80px}
+
+    .big{font-size:24px;font-weight:800}
+    .sub{color:var(--muted);font-size:13px}
+
+    .timer{font-size:48px;font-weight:900;letter-spacing:1px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid #2a2a58;background:#0e0e26;font-size:12px}
+
+    .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:#101018}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .btn-accent{background:var(--accent)}
+    .btn-ghost{background:transparent;color:var(--text);border:1px solid #2a2a58}
+    .btn-danger{background:var(--danger);color:white}
+    .btn-success{background:var(--success);color:white}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #262654;font-size:14px}
+    th{color:var(--muted);text-align:left}
+
+    .team-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;color:#0b0b1d;font-weight:800}
+
+    .stack{display:flex;flex-wrap:wrap;gap:8px}
+
+    .footer{display:flex;gap:8px;flex-wrap:wrap}
+    .right{display:flex;gap:8px;align-items:center}
+
+    .notice{font-size:12px;color:var(--muted)}
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏏 PRAYUSH MUN – IPL Mega Auction <span class="badge">Live Room</span></h1>
+    <div class="right">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+      <button class="btn btn-accent" id="loadDemo">Load Demo Players</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: Live Auction Panel -->
+    <section class="card" id="livePanel">
+      <h2>Current Player</h2>
+      <div class="grid">
+        <div>
+          <label>Player Name</label>
+          <div class="big" id="pName">—</div>
+          <div class="sub" id="pRole">—</div>
+        </div>
+        <div>
+          <label>Grade</label>
+          <div class="pill" id="pGrade">—</div>
+        </div>
+        <div>
+          <label>Base Price</label>
+          <div class="big" id="pBase">—</div>
+        </div>
+        <div>
+          <label>Stats (optional)</label>
+          <div class="sub" id="pStats">—</div>
+        </div>
+      </div>
+
+      <hr style="border-color:#262654;margin:16px 0">
+
+      <div class="grid">
+        <div>
+          <label>Current Bid (₹ Lakhs / Crores)</label>
+          <input id="bidAmount" type="number" min="0" step="1" placeholder="Enter amount e.g. 200 (₹ Lakhs) or 2 (₹ Cr)" />
+        </div>
+        <div>
+          <label>Leading Team</label>
+          <select id="bidTeam"></select>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:8px;flex-wrap:wrap">
+        <div class="timer" id="timer">10</div>
+        <div class="footer">
+          <button class="btn btn-accent" id="start">Start 10s</button>
+          <button class="btn btn-ghost" id="reset">Reset</button>
+          <button class="btn btn-success" id="sold">Mark SOLD</button>
+          <button class="btn btn-danger" id="skip">Skip Player</button>
+        </div>
+      </div>
+      <div class="notice">Tip: update bid + team, start timer. If timer hits 0 with no new bids, click <b>Mark SOLD</b>.</div>
+    </section>
+
+    <!-- RIGHT: Queue + Results -->
+    <section class="card">
+      <h2>Player Queue</h2>
+      <div class="stack" id="queue"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" id="prev">◀ Prev</button>
+        <button class="btn btn-accent" id="next">Next ▶</button>
+        <button class="btn btn-ghost" id="reopen">Reopen Last SOLD</button>
+      </div>
+      <hr style="border-color:#262654;margin:16px 0">
+      <h2>Results (SOLD)</h2>
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Grade</th>
+            <th>Team</th>
+            <th>Final Price</th>
+            <th>Stats</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-accent" id="exportCsv">Export CSV</button>
+        <button class="btn btn-ghost" id="clearResults">Clear Results</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // --- Team colors mapping ---
+    const TEAM_COLORS = {
+      "Chennai Super Kings": "#f6d61f",
+      "Mumbai Indians": "#005da0",
+      "Royal Challengers Bangalore": "#d71920",
+      "Kolkata Knight Riders": "#3f2155",
+      "Rajasthan Royals": "#ea1a85",
+      "Delhi Capitals": "#004c97",
+      "Sunrisers Hyderabad": "#f26522",
+      "Lucknow Super Giants": "#00a0a1",
+      "Gujarat Titans": "#001b2d",
+      "Punjab Kings": "#c41e3a",
+      "—": "#7b61ff"
+    };
+
+    const TEAM_LIST = Object.keys(TEAM_COLORS);
+
+    // Populate team dropdown
+    const teamSel = document.getElementById('bidTeam');
+    TEAM_LIST.forEach(t=>{
+      const opt=document.createElement('option');
+      opt.value=t; opt.textContent=t; teamSel.appendChild(opt);
+    });
+
+    // State
+    let players = []; // {name, grade, base, role, stats}
+    let index = 0;
+    let timer = null; let timeLeft = 10; let lastSold = null;
+    const qEl = document.getElementById('queue');
+
+    function moneyFmt(v){
+      if(v===null||v===undefined||v==='') return '—';
+      const n = Number(v);
+      if(isNaN(n)) return String(v);
+      // Format as ₹ with L/Cr hint
+      if(n >= 100) return `₹ ${(n/100).toFixed(2)} Cr`;
+      return `₹ ${n} L`;
+    }
+
+    function paintCurrent(){
+      if(!players.length){
+        document.getElementById('pName').textContent = '—';
+        document.getElementById('pRole').textContent = '—';
+        document.getElementById('pGrade').textContent = '—';
+        document.getElementById('pBase').textContent = '—';
+        document.getElementById('pStats').textContent = '—';
+        return;
+      }
+      const p = players[index];
+      document.getElementById('pName').textContent = p.name || '—';
+      document.getElementById('pRole').textContent = p.role || '';
+      const gradeEl = document.getElementById('pGrade');
+      gradeEl.textContent = p.grade || '—';
+      gradeEl.style.background = '#0e0e26';
+      gradeEl.style.border = '1px solid #2a2a58';
+      document.getElementById('pBase').textContent = moneyFmt(p.base);
+      document.getElementById('pStats').textContent = p.stats || '—';
+
+      // Queue chips
+      qEl.innerHTML = '';
+      players.forEach((pl, i)=>{
+        const chip = document.createElement('div');
+        chip.className = 'pill';
+        chip.style.cursor='pointer';
+        chip.style.borderColor = i===index ? 'var(--accent)' : '#2a2a58';
+        chip.innerHTML = `<b>${i+1}.</b> ${pl.name} <span style="opacity:0.7">(${pl.grade||'–'})</span>`;
+        chip.onclick = ()=>{ index = i; paintCurrent(); };
+        qEl.appendChild(chip);
+      });
+    }
+
+    function next(){ if(index < players.length-1){ index++; paintCurrent(); resetTimer(); } }
+    function prev(){ if(index > 0){ index--; paintCurrent(); resetTimer(); } }
+
+    // Timer controls
+    const timerEl = document.getElementById('timer');
+    function startTimer(){
+      clearInterval(timer); timeLeft = 10; timerEl.textContent = timeLeft;
+      timer = setInterval(()=>{
+        timeLeft--; timerEl.textContent = timeLeft <= 0 ? '0' : String(timeLeft);
+        if(timeLeft <= 0){ clearInterval(timer); }
+      },1000);
+    }
+    function resetTimer(){ clearInterval(timer); timeLeft = 10; timerEl.textContent = '10'; }
+
+    // Results handling
+    const resultsTBody = document.querySelector('#resultsTable tbody');
+    const results = [];
+
+    function markSold(){
+      if(!players.length) return;
+      const p = players[index];
+      const team = document.getElementById('bidTeam').value || '—';
+      const price = document.getElementById('bidAmount').value || '';
+      const rec = { idx:index, name:p.name, grade:p.grade||'', team, price, stats:p.stats||'', base:p.base||'' };
+      results.push(rec); lastSold = rec;
+
+      // Add to table
+      const tr = document.createElement('tr');
+      const color = TEAM_COLORS[team] || '#7b61ff';
+      tr.innerHTML = `
+        <td>${results.length}</td>
+        <td>${escapeHtml(p.name||'')}</td>
+        <td>${escapeHtml(p.grade||'')}</td>
+        <td><span class="team-badge" style="background:${color}">${escapeHtml(team)}</span></td>
+        <td>${escapeHtml(moneyFmt(price))}</td>
+        <td>${escapeHtml(p.stats||'')}</td>`;
+      resultsTBody.appendChild(tr);
+
+      // Move to next
+      next();
+      document.getElementById('bidAmount').value = '';
+      resetTimer();
+    }
+
+    function reopenLast(){
+      if(!lastSold) return;
+      // Remove from array & table
+      const i = results.indexOf(lastSold);
+      if(i>-1){ results.splice(i,1); resultsTBody.deleteRow(i); lastSold=null; }
+    }
+
+    function clearResults(){
+      results.length = 0; lastSold=null; resultsTBody.innerHTML='';
+    }
+
+    function exportCsv(){
+      const rows = [["#","Player","Grade","Team","Final Price","Base","Stats"]];
+      results.forEach((r, i)=>{
+        rows.push([i+1, r.name, r.grade, r.team, moneyFmt(r.price), moneyFmt(r.base), r.stats]);
+      });
+      const csv = rows.map(r=>r.map(s=>`"${String(s).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'auction_results.csv'; a.click();
+    }
+
+    // Helpers
+    function escapeHtml(str){
+      return String(str).replace(/[&<>\"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]));
+    }
+
+    // File loading (CSV/XLSX)
+    document.getElementById('fileInput').addEventListener('change', handleFile);
+
+    async function handleFile(e){
+      const file = e.target.files[0]; if(!file) return;
+      if(file.name.endsWith('.csv')){
+        const text = await file.text();
+        parseCSV(text);
+      } else {
+        // Load via SheetJS if available
+        if(typeof XLSX === 'undefined'){
+          alert('To read Excel files offline, connect to internet or upload CSV.');
+          return;
+        }
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {defval:''});
+        loadPlayersFromJSON(json);
+      }
+    }
+
+    function parseCSV(text){
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
+      const out = [];
+      for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(',');
+        const row = {};
+        headers.forEach((h,idx)=> row[h]=cols[idx]||'');
+        out.push(row);
+      }
+      loadPlayersFromJSON(out);
+    }
+
+    function loadPlayersFromJSON(rows){
+      // Expected columns (case-insensitive): Name, Grade, Base, Role, Stats
+      players = rows.map(r=>({
+        name: r.Name||r.Player||r.PlayerName||r.player||r.name||'Unknown',
+        grade: r.Grade||r.grade||'',
+        base: r.Base||r.BasePrice||r.base||r.baseprice||'',
+        role: r.Role||r.Type||r.role||'',
+        stats: r.Stats||r.Note||r.stats||r.note||''
+      })).filter(p=>p.name && p.name!=='Unknown');
+      index = 0; paintCurrent();
+    }
+
+    // Demo players (in case you need quick start)
+    document.getElementById('loadDemo').addEventListener('click', ()=>{
+      players = [
+        {name:'Rohit Sharma', grade:'A', base:200, role:'Batsman', stats:'ODI SR 90.0'},
+        {name:'Rashid Khan', grade:'A', base:200, role:'All-rounder', stats:'T20 Econ 6.5'},
+        {name:'Ruturaj Gaikwad', grade:'B', base:100, role:'Batsman', stats:'T20 Avg 38'},
+        {name:'Mitchell Starc', grade:'A', base:200, role:'Bowler', stats:'150 kph left-arm'},
+        {name:'Sanju Samson', grade:'B', base:100, role:'WK-Batsman', stats:'Safe hands'}
+      ]; index = 0; paintCurrent();
+    });
+
+    // Controls wiring
+    document.getElementById('start').onclick = startTimer;
+    document.getElementById('reset').onclick = resetTimer;
+    document.getElementById('sold').onclick = markSold;
+    document.getElementById('skip').onclick = next;
+    document.getElementById('next').onclick = next;
+    document.getElementById('prev').onclick = prev;
+    document.getElementById('reopen').onclick = reopenLast;
+    document.getElementById('exportCsv').onclick = exportCsv;
+    document.getElementById('clearResults').onclick = clearResults;
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){ markSold(); }
+      if(e.key===' '){ e.preventDefault(); startTimer(); }
+      if(e.key==='ArrowRight'){ next(); }
+      if(e.key==='ArrowLeft'){ prev(); }
+    });
+  </script>
+
+  <!-- SheetJS CDN for XLSX support (requires internet). If offline, upload CSV instead. -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</body>
+</html>
